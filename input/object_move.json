@@ -1,0 +1,8 @@
+{
+  "scene": "input/black_tile_flooring.png",
+  "description": "Move each object located at `initial` so that point lands on `final` (all moves applied together).",
+  "moves": [
+    {"initial": {"x": 282,  "y": 440}, "final": {"x": 918, "y": 442}},
+    {"initial": {"x": 1061, "y": 506}, "final": {"x": 278, "y": 440}}
+  ]
+}

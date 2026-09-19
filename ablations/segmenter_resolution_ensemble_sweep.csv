@@ -1,0 +1,10 @@
+config,gen_s,floor_iou,floor_bF,wall_iou,wall_bF
+SegFormer-B5 640x640 (default squash),0.45,0.9844,0.6721,0.9903,0.9472
+SegFormer-B5 640x360 (aspect),0.28,0.9813,0.5265,0.9603,0.5359
+SegFormer-B5 1024x576,0.57,0.9852,0.6878,0.9887,0.922
+SegFormer-B5 1600x900 (native),2.26,0.9846,0.6687,0.9766,0.7067
+UPerNet ConvNeXt-L 512x512 (default),0.41,0.9865,0.7343,0.9558,0.6502
+UPerNet ConvNeXt-L 1024x576,0.86,0.9847,0.7963,0.9787,0.7692
+UPerNet ConvNeXt-L 1600x900 (native),2.32,0.9608,0.4993,0.9915,0.9813
+ENSEMBLE SegFormer-B5 1024x576 + UPerNet ConvNeXt-L 1024x576,0,0.9855,0.7851,0.9881,0.8915
+ENSEMBLE SegFormer-B5 1600x900 (native) + UPerNet ConvNeXt-L 1600x900 (native),0,0.9791,0.6068,0.9833,0.7927

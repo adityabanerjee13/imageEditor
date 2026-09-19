@@ -1,0 +1,8 @@
+run_id,variant,image,fidelity_clip,fidelity_clip_ref,outside_mad,outside_pct,inside_mad,model,release_date,gen_time_s,load_time_s,device,precision,steps
+render_only,A: rendering only (Mask2Former + MoGe-2 plane + projection),_pipeline_render/render_shaded.png,0.7577,0.5112,0.02,0.03,16.09,-,-,-,-,-,-,-
+MatSwap,MatSwap material transfer,MatSwap/matswap_fullres_composite.png,0.6861,0.5112,0.0,0.0,22.52,MatSwap,2025-02,152.11,29.65,Intel(R) Arc(TM) 140T GPU (16GB),float32,50
+LBM/relight/renderA_shaded/1step,A + LBM relighting (1 step),LBM/lbm_relight_renderA_shaded_1step.png,0.6952,0.5112,9.63,34.17,15.87,LBM,2025-03,17.43,47.75,Intel(R) Arc(TM) 140T GPU (16GB),bf16,1
+LBM/relight/renderA_shaded/4step,A + LBM relighting (4 steps),LBM/lbm_relight_renderA_shaded_4step.png,0.6985,0.5112,8.88,30.86,15.93,LBM,2025-03,7.95,0.0,Intel(R) Arc(TM) 140T GPU (16GB),bf16,4
+LBM/relight/renderA_flat/1step,"A(flat, unshaded) + LBM relighting (1 step)",LBM/lbm_relight_renderA_flat_1step.png,0.7627,0.5112,11.47,38.35,48.71,LBM,2025-03,5.01,0.0,Intel(R) Arc(TM) 140T GPU (16GB),bf16,1
+ControlTile,"C: ControlTile end to end (512px texture, 0.6 m tile)",ControlTile/controltile_result.png,0.5499,0.5112,0.0,0.0,32.34,ControlTile,2026-06,866.93,60.61,Intel(R) Arc(TM) 140T GPU (16GB),GGUF Q6_K + bf16 compute + bf16 LoRA,50
+ControlTile_mtl1024_tile1m,"C: ControlTile end to end (1024px texture, 1.0 m tile)",ControlTile/controltile_mtl1024_tile1m_result.png,0.6632,0.5112,0.0,0.0,31.91,ControlTile,2026-06,1497.11,57.3,Intel(R) Arc(TM) 140T GPU (16GB),GGUF Q6_K + bf16 compute + bf16 LoRA,50

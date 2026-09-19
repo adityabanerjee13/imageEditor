@@ -1,0 +1,22 @@
+# large, reproducible via `python setup.py` (see README)
+weights/
+repos/
+
+# run outputs
+outputs/
+
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# tooling / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+.cache/
+*.incomplete

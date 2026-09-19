@@ -1,0 +1,6 @@
+{
+  "scene": "input/scene.jpeg",
+  "description": "Move the object located at `initial` so that it is centred at `final`.",
+  "initial": {"x": 170, "y": 713},
+  "final":   {"x": 730, "y": 714}
+}
