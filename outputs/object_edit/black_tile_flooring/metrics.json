@@ -1,0 +1,131 @@
+{
+  "device": "xpu",
+  "stages": [
+    {
+      "stage": "segmentation",
+      "model": "SAM 3 point prompt x2",
+      "objects": [
+        {
+          "src": [
+            282,
+            440
+          ],
+          "iou": [
+            0.9259999990463257,
+            0.39399999380111694,
+            0.9319999814033508
+          ],
+          "areas": [
+            891,
+            2403,
+            995
+          ],
+          "picked": 1
+        },
+        {
+          "src": [
+            1061,
+            506
+          ],
+          "iou": [
+            0.8730000257492065,
+            0.4880000054836273,
+            0.8920000195503235
+          ],
+          "areas": [
+            1162,
+            2603,
+            1296
+          ],
+          "picked": 1
+        }
+      ],
+      "time_s": 11.21,
+      "gpu_peak_gb": 3.86,
+      "load_s": 5.78
+    },
+    {
+      "stage": "mask_dilation",
+      "model": "radius 6 px",
+      "time_s": 0.0,
+      "gpu_peak_gb": 0.11,
+      "mask_px": 5030,
+      "dilated_px": 8049
+    },
+    {
+      "stage": "geometry",
+      "model": "MoGe-2 ViT-L",
+      "time_s": 5.07,
+      "gpu_peak_gb": 2.74,
+      "load_s": 4.73,
+      "objects": [
+        {
+          "z_src": 5.326,
+          "z_dst": 5.616,
+          "scale": 0.948
+        },
+        {
+          "z_src": 3.049,
+          "z_dst": 5.325,
+          "scale": 0.573
+        }
+      ]
+    },
+    {
+      "stage": "load",
+      "model": "SD-1.5 fp16 (FreeFine)",
+      "time_s": 7.05
+    },
+    {
+      "stage": "background_generation",
+      "model": "LaMa big-lama (native 1080px, 2 holes, refined)",
+      "time_s": 57.63,
+      "gpu_peak_gb": 13.07
+    },
+    {
+      "stage": "regeneration",
+      "model": "FreeFine gen object 1/2 start_step=15",
+      "time_s": 96.93,
+      "gpu_peak_gb": 7.13
+    },
+    {
+      "stage": "regeneration",
+      "model": "FreeFine gen object 2/2 start_step=15",
+      "time_s": 78.06,
+      "gpu_peak_gb": 7.13
+    }
+  ],
+  "seed": 42,
+  "roi_box": [
+    0,
+    0,
+    1080
+  ],
+  "moves": [
+    {
+      "src": [
+        282,
+        440
+      ],
+      "dst": [
+        918,
+        442
+      ],
+      "scale": 0.948
+    },
+    {
+      "src": [
+        1061,
+        506
+      ],
+      "dst": [
+        278,
+        440
+      ],
+      "scale": 0.573
+    }
+  ],
+  "removal": "lama",
+  "start_step": 15,
+  "end_scale": 0.0
+}

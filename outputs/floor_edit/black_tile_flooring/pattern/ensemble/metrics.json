@@ -1,0 +1,41 @@
+{
+  "scene": "input\\black_tile_flooring.png",
+  "pattern": "input\\pattern.png",
+  "seg": "ensemble",
+  "illum": "rgbx",
+  "tile_m": 0.6,
+  "device": "xpu",
+  "floor_coverage_pct": 37.4,
+  "total_gen_s": 17.42,
+  "stages": [
+    {
+      "stage": "segmentation",
+      "model": "SegFormer-B5 + UPerNet ConvNeXt-L",
+      "gen_s": 3.717,
+      "gpu_peak_gb": 3.744,
+      "load_s": 1.34
+    },
+    {
+      "stage": "geometry",
+      "model": "MoGe-2 ViT-L",
+      "gen_s": 3.994,
+      "gpu_peak_gb": 2.626,
+      "load_s": 2.83
+    },
+    {
+      "stage": "illumination",
+      "model": "RGB->X irradiance (10 steps)",
+      "gen_s": 9.414,
+      "gpu_peak_gb": 3.742,
+      "load_s": 2.25
+    },
+    {
+      "stage": "render",
+      "model": "plane fit + tiling + shading (CPU)",
+      "gen_s": 0.293,
+      "gpu_peak_gb": 0.0,
+      "plane_residual_cm": 0.28,
+      "tile_m": 0.6
+    }
+  ]
+}

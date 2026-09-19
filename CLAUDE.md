@@ -27,11 +27,6 @@ Options: `--seg {ensemble,sam3}`, `--illum {rgbx,heuristic}`, `--tile-m` (textur
 Windows 11, Python 3.13, PyTorch 2.13 XPU (Intel Arc 140T iGPU, 16 GB shared), no CUDA. Typical run: ensemble 4 s, MoGe-2 4 s, RGB->X 9-14 s (incl. first-call warm-up), render 0.3-0.5 s -> ~17-26 s per image excluding model loads.
 Constraints: per-file download cap 1 GB (exceptions were granted for SAM 3 3.4 GB and RGB->X 4.9 GB); `facebook/sam3` is gated on this account -> weights came from the `jetjodh/sam3` mirror.
 
-## History (details in ablations/*.csv)
-- 10-model survey (MatSwap, ControlTile, LBM, MARBLE, IntrinsicEdit, FLUX Kontext, Qwen-Image-Edit, Insert Anything, SAM3, MoGe-2): MatSwap gave the best generative floor (152 s); ControlTile needed a re-implementation and 25 min; all generative editors were dropped in favour of the geometric render + illumination map, which is ~20 s and changes nothing outside the mask.
-- Segmenters compared vs geometry pseudo-GT: ensemble > SegFormer > UPerNet > Mask2Former > OneFormer; SAM 2.1 fragments textured floors; SAM 3 kept as the text-promptable option.
-- Illumination: heuristic fails on dark tile-to-tile albedo (kitchen); Intrinsic v2.1 (Careaga & Aksoy) was the strongest but was removed per the consolidation (RGB->X kept as the configurable default).
-
 ## Gotchas
 - Keep GPU runs sequential; the first model call in a process pays 5-15 s of kernel warm-up.
 - `weights/*/.cache` may hold stale `.incomplete` downloads from interrupted fetches — delete them.

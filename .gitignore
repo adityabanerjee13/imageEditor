@@ -2,8 +2,8 @@
 weights/
 repos/
 
-# run outputs
-outputs/
+# # run outputs
+# outputs/
 
 # python
 __pycache__/

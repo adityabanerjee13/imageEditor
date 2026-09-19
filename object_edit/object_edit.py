@@ -17,7 +17,8 @@ Stages (all objects are processed together: one removal pass, one regeneration p
   3. perspective scale MoGe-2 metric depth, per object: scale = z(initial) / z(final)  (--scale overrides)
   4. ROI               square window covering every object at its source and destination, resized to 512
                        (FreeFine's native size); only this window is edited
-  5. object removal    --removal lama (default): LaMa big-lama at native resolution, all holes at once;
+  5. object removal    --removal lama (default): LaMa big-lama at native resolution, all holes at once
+                       with Geomagical feature refinement on by default (--no-lama-refine to skip);
                        --removal freefine: FreeFine background generation ("empty scene", GeoBench settings)
                        Original pixels are kept outside the holes either way
   6. coarse edit       affine copy of every object to its destination (translate + scale), in order
@@ -306,15 +307,29 @@ def load_lama():
     return _lama
 
 
-@torch.no_grad()
-def lama_inpaint(img_rgb, hole):
-    """img_rgb uint8 HxWx3, hole bool HxW (True = fill); whole crop, padded to a multiple of 8."""
+def lama_inpaint(img_rgb, hole, refine=False, n_iters=15):
+    """img_rgb uint8 HxWx3, hole bool HxW (True = fill); whole crop, padded to a multiple of 8.
+    refine=True runs LaMa's feature refinement (Geomagical, arXiv 2206.13644; repos/lama-with-refiner ==
+    upstream `refine=True`): an image pyramid where the generator's inner features are optimised for
+    `n_iters` Adam steps per scale so the full-res fill agrees with the low-res prediction."""
     model = load_lama()
     H, W = hole.shape
     ph, pw = (8 - H % 8) % 8, (8 - W % 8) % 8
     img = torch.from_numpy(np.pad(img_rgb, ((0, ph), (0, pw), (0, 0)), mode="reflect")).float().permute(2, 0, 1)[None] / 255.0
     m = torch.from_numpy(np.pad(hole.astype(np.float32), ((0, ph), (0, pw)), mode="constant"))[None, None]
-    out = model({"image": img.to(DEV), "mask": m.to(DEV)})["inpainted"][0].permute(1, 2, 0).cpu().numpy()[:H, :W]
+    if refine:
+        import saicinpainting.evaluation.refinement as R
+
+        class _TorchOnDev:                      # the refiner builds "cuda:<id>" device strings
+            def __getattr__(self, k): return getattr(torch, k)
+            def device(self, d): return torch.device(str(DEV)) if str(d).startswith("cuda") else torch.device(d)
+        R.torch = _TorchOnDev()
+        out = R.refine_predict({"image": img, "mask": m, "unpad_to_size": [torch.tensor([H]), torch.tensor([W])]}, model,
+                               gpu_ids="0,", modulo=8, n_iters=n_iters, lr=0.002, min_side=512, max_scales=3, px_budget=1800000)
+        out = out[0].permute(1, 2, 0).detach().cpu().numpy()[:H, :W]
+    else:
+        with torch.no_grad():
+            out = model({"image": img.to(DEV), "mask": m.to(DEV)})["inpainted"][0].permute(1, 2, 0).cpu().numpy()[:H, :W]
     return np.clip(out * 255, 0, 255).astype(np.uint8)
 
 
@@ -386,19 +401,25 @@ def run(full_task, args):
     ori_img = to_512(task.image)
     ori_mask = np.repeat(mask_to_512(task.mask)[..., None], 3, -1)      # union of tight masks, 3-channel {0,1}
 
-    model, load_s = timed(load_pipeline)
-    log.append({"stage": "load", "model": "SD-1.5 fp16 (FreeFine)", "time_s": load_s})
     seed = args.seed if args.seed >= 0 else random.randint(0, 2 ** 31)
 
-    # ---- 5. removal: all holes at once
+    def load_sd():
+        m, load_s = timed(load_pipeline)
+        log.append({"stage": "load", "model": "SD-1.5 fp16 (FreeFine)", "time_s": load_s})
+        return m
+
+    # ---- 5. removal: all holes at once (SD-1.5 is loaded afterwards so the refiner's backward pass
+    # does not share the accelerator with it)
     hole = task.mask_dilated                                     # union of dilated masks, ROI coordinates
     dil_mask = np.repeat(mask_to_512(hole)[..., None], 3, -1)
     if args.removal == "lama":
-        with Stage(log, "background_generation", f"LaMa big-lama (native {W}px, {len(task.moves)} holes)"):
-            bg_native = lama_inpaint(np.asarray(task.image), hole)
+        with Stage(log, "background_generation", f"LaMa big-lama (native {W}px, {len(task.moves)} holes{', refined' if args.lama_refine else ''})"):
+            bg_native = lama_inpaint(np.asarray(task.image), hole, refine=args.lama_refine)
         Image.fromarray(bg_native).save(od / "background_roi.png")      # native-res ROI crop
         bg = to_512(bg_native)
+        model = load_sd()
     else:
+        model = load_sd()
         with Stage(log, "background_generation", "FreeFine bg-gen 50 steps"):
             bg = generate_background(model, ori_img, dil_mask, args.bg_prompt, seed)
     Image.fromarray(bg).save(od / "background_512.png")
@@ -457,6 +478,8 @@ def parse():
     ap.add_argument("--prompt", default="", help='refine-stage guidance text (FreeFine benchmark: "")')
     ap.add_argument("--bg-prompt", default="empty scene", help="background-generation text (FreeFine benchmark value)")
     ap.add_argument("--removal", default="lama", choices=["lama", "freefine"], help="object-removal backend")
+    ap.add_argument("--no-lama-refine", dest="lama_refine", action="store_false",
+                    help="disable LaMa feature refinement (on by default: multi-scale, 15 Adam steps/scale, ~+45 s)")
     ap.add_argument("--dilate-radius", type=int, default=6, help="stage 2: object mask grown by this many native px (6)")
     ap.add_argument("--start-step", type=int, default=15, help="benchmark uses 35 (keeps more pasted pixels); 15 regenerates more")
     ap.add_argument("--end-scale", type=float, default=0.0)

@@ -1,0 +1,41 @@
+{
+  "scene": "input\\scene.jpeg",
+  "pattern": "input\\pattern.png",
+  "seg": "ensemble",
+  "illum": "rgbx",
+  "tile_m": 0.6,
+  "device": "xpu",
+  "floor_coverage_pct": 48.3,
+  "total_gen_s": 22.98,
+  "stages": [
+    {
+      "stage": "segmentation",
+      "model": "SegFormer-B5 + UPerNet ConvNeXt-L",
+      "gen_s": 4.401,
+      "gpu_peak_gb": 4.235,
+      "load_s": 3.79
+    },
+    {
+      "stage": "geometry",
+      "model": "MoGe-2 ViT-L",
+      "gen_s": 4.385,
+      "gpu_peak_gb": 2.629,
+      "load_s": 3.15
+    },
+    {
+      "stage": "illumination",
+      "model": "RGB->X irradiance (10 steps)",
+      "gen_s": 13.816,
+      "gpu_peak_gb": 4.622,
+      "load_s": 2.57
+    },
+    {
+      "stage": "render",
+      "model": "plane fit + tiling + shading (CPU)",
+      "gen_s": 0.383,
+      "gpu_peak_gb": 0.0,
+      "plane_residual_cm": 0.21,
+      "tile_m": 0.6
+    }
+  ]
+}

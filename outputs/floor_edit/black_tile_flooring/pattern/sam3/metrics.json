@@ -1,0 +1,44 @@
+{
+  "scene": "input\\black_tile_flooring.png",
+  "pattern": "C:\\Users\\Aditya Banerjee\\Documents\\personal\\imageEditor\\input\\pattern.png",
+  "seg": "sam3",
+  "illum": "rgbx",
+  "tile_m": 0.6,
+  "device": "xpu",
+  "floor_coverage_pct": 37.0,
+  "total_gen_s": 21.4,
+  "stages": [
+    {
+      "stage": "segmentation",
+      "model": "SAM 3 (text prompt 'floor')",
+      "gen_s": 7.504,
+      "gpu_peak_gb": 5.243,
+      "load_s": 5.82,
+      "scores": [
+        0.9829999804496765
+      ]
+    },
+    {
+      "stage": "geometry",
+      "model": "MoGe-2 ViT-L",
+      "gen_s": 3.85,
+      "gpu_peak_gb": 2.784,
+      "load_s": 3.71
+    },
+    {
+      "stage": "illumination",
+      "model": "RGB->X irradiance (10 steps)",
+      "gen_s": 9.742,
+      "gpu_peak_gb": 3.898,
+      "load_s": 2.35
+    },
+    {
+      "stage": "render",
+      "model": "plane fit + tiling + shading (CPU)",
+      "gen_s": 0.301,
+      "gpu_peak_gb": 0.159,
+      "plane_residual_cm": 0.28,
+      "tile_m": 0.6
+    }
+  ]
+}

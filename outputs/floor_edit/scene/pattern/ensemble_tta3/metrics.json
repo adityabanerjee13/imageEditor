@@ -1,0 +1,55 @@
+{
+  "scene": "input\\scene.jpeg",
+  "pattern": "C:\\Users\\Aditya Banerjee\\Documents\\personal\\imageEditor\\input\\pattern.png",
+  "seg": "ensemble_tta3",
+  "tta": 3,
+  "seed": 0,
+  "illum": "rgbx",
+  "tile_m": 0.6,
+  "device": "xpu",
+  "floor_coverage_pct": 48.3,
+  "total_gen_s": 26.8,
+  "stages": [
+    {
+      "stage": "segmentation",
+      "model": "SegFormer-B5 + UPerNet ConvNeXt-L, 3x TTA + majority vote",
+      "gen_s": 6.864,
+      "gpu_peak_gb": 4.235,
+      "load_s": 2.5,
+      "tta": 3,
+      "augmentations": [
+        "brightness-0.037, contrast x0.927, noise sd=0.000",
+        "brightness+0.023, contrast x1.051, noise sd=0.014",
+        "mirror, brightness-0.012, contrast x1.006, noise sd=0.007"
+      ],
+      "vote_iou_vs_majority": [
+        0.9988,
+        0.9971,
+        0.9971
+      ],
+      "unanimous_pct": 99.66
+    },
+    {
+      "stage": "geometry",
+      "model": "MoGe-2 ViT-L",
+      "gen_s": 4.455,
+      "gpu_peak_gb": 2.629,
+      "load_s": 2.87
+    },
+    {
+      "stage": "illumination",
+      "model": "RGB->X irradiance (10 steps)",
+      "gen_s": 15.063,
+      "gpu_peak_gb": 4.622,
+      "load_s": 2.49
+    },
+    {
+      "stage": "render",
+      "model": "plane fit + tiling + shading (CPU)",
+      "gen_s": 0.42,
+      "gpu_peak_gb": 0.0,
+      "plane_residual_cm": 0.21,
+      "tile_m": 0.6
+    }
+  ]
+}
