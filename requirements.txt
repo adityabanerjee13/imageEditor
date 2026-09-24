@@ -24,6 +24,11 @@ accelerate>=1.0
 safetensors>=0.4
 sentencepiece
 
+# server/ (web UI backend)
+fastapi>=0.110
+uvicorn[standard]>=0.27
+python-multipart
+
 # repos/MoGe (moge.model.v2)
 utils3d_moge @ git+https://github.com/EasternJournalist/utils3d-moge.git@62f09d58509485564e24d5d9f6aac9ee9ebc0c37
 trimesh>=4.11
@@ -46,3 +51,8 @@ pandas
 joblib
 tabulate
 braceexpand
+
+# object_edit/{preclean,resolution}.py (DDRM + DRUNet)
+deepinv==0.4.2             # install with --no-deps: its torch/torchvision pins would replace the XPU build
+h5py
+natsort
