@@ -4,7 +4,8 @@ Paste-ready Markdown for `README.md`. Every image comes from the three recorded 
 
 | feature | job | scene |
 |---|---|---|
-| floor_edit | `data/jobs/665216962fff` | kitchen 1080×1080, marble pattern, `--seg ensemble --illum rgbx` |
+| floor_edit (matte) | `data/jobs/d629eff0baa1` | kitchen 1080×1080, `--material smooth-matte --tile-m 2.7` |
+| floor_edit (glossy) | `data/jobs/3edf184a4952` | kitchen 1080×1080, `--material smooth-glossy --tile-m 2.904` |
 | object_edit | `data/jobs/254b0c927881` | living room 2000×1500, `--removal omnipaint --insertion omnipaint --omnipaint-mode full` |
 | imageto3D | `data/jobs/79e777137bfe` | the patterned cushion from that same living-room photo |
 
@@ -22,32 +23,45 @@ scale 0.876 for object_edit; plane residual 0.28 cm against the logged 0.27 cm f
 
 ## floor_edit
 
+Two finishes of the same scene. Images live in `docs/images/floor_edit/matte/` and `docs/images/floor_edit/glossy/`;
+every numbered file exists in both.
+
 ### Result
 
-![floor_edit: replace the floor](docs/images/floor_edit/00_task.jpg)
+![floor_edit: replace the floor](docs/images/floor_edit/glossy/00_task.jpg)
 
-**Task** — a room photo and a tile pattern. **Result** — the floor is re-tiled in true perspective at 0.6 m per repeat,
-with the room's own lighting and shadows kept. 18.3 s of generation on the iGPU (3.2 s segmentation, 4.0 s MoGe-2,
-10.7 s RGB→X, 0.3 s render).
+**Task** — a room photo and a tile pattern. **Result** — the floor is re-tiled in true perspective at 2.9 × 1.44 m per
+slab, with the room's own lighting and shadows kept, and the cabinets reflected in the polished surface.
+
+The finish is a two-option choice in the CLI (`--material`) and in the web UI:
+
+![matte vs glossy](docs/images/floor_edit/11_finish_compare.jpg)
+
+Both presets share `f0` = 0.04 — a dielectric reflects ~4 % at normal incidence whatever its roughness, so the finish
+cannot change how bright the floor is underfoot. Only the lobe width differs (roughness 0.75 vs 0.08), and with it how
+fast reflectance climbs toward grazing (0.25 vs 0.92) and whether the reflection is a soft haze or a legible mirror.
+
+> These two panels come from two different jobs, so they also differ in pattern and slab size — the captions give both.
+> It is a comparison of two finished results, not a controlled finish-only A/B.
 
 ### Stages
 
-![floor_edit stages](docs/images/floor_edit/09_stages.jpg)
+![floor_edit stages](docs/images/floor_edit/glossy/09_stages.jpg)
 
 | # | stage | image |
 |---|---|---|
-| — | scene photo | [`01_input.jpg`](docs/images/floor_edit/01_input.jpg) |
-| — | tile pattern | [`02_pattern.jpg`](docs/images/floor_edit/02_pattern.jpg) |
-| 1 | **Segmentation** — mean-softmax ensemble of SegFormer-B5 + UPerNet ConvNeXt-L, ADE20K classes floor + rug; 37.4 % of the frame | [`03_floor_mask.jpg`](docs/images/floor_edit/03_floor_mask.jpg) · [binary](docs/images/floor_edit/03b_floor_mask_binary.png) |
-| 2 | **Geometry** — MoGe-2 ViT-L metric point map and intrinsics | [`04_geometry_depth.jpg`](docs/images/floor_edit/04_geometry_depth.jpg) |
-| 2 | least-squares plane through the floor points (2 inlier re-fits, 0.28 cm residual), shown as its own 0.6 m grid | [`05_plane_fit.jpg`](docs/images/floor_edit/05_plane_fit.jpg) |
-| 3 | **Render** — every pixel's ray meets the plane, giving metric (u, v); the pattern is tiled there, unlit | [`06_tiled_unlit.jpg`](docs/images/floor_edit/06_tiled_unlit.jpg) |
-| 4 | **Illumination** — RGB→X diffuse irradiance, normalised on the floor and morphologically cleaned of old grout lines | [`07_illumination.jpg`](docs/images/floor_edit/07_illumination.jpg) |
-| 5 | tiling × shading, composited through a 1 px soft mask | [`08_output.jpg`](docs/images/floor_edit/08_output.jpg) |
+| — | scene photo | [`01_input.jpg`](docs/images/floor_edit/glossy/01_input.jpg) |
+| — | tile pattern | [`02_pattern.jpg`](docs/images/floor_edit/glossy/02_pattern.jpg) |
+| 1 | **Segmentation** — mean-softmax ensemble of SegFormer-B5 + UPerNet ConvNeXt-L, ADE20K classes floor + rug; 37.4 % of the frame | [`03_floor_mask.jpg`](docs/images/floor_edit/glossy/03_floor_mask.jpg) · [binary](docs/images/floor_edit/glossy/03b_floor_mask_binary.png) |
+| 2 | **Geometry** — MoGe-2 ViT-L metric point map and intrinsics | [`04_geometry_depth.jpg`](docs/images/floor_edit/glossy/04_geometry_depth.jpg) |
+| 2 | least-squares plane through the floor points (2 inlier re-fits, 0.27 cm residual), shown as its own metric grid | [`05_plane_fit.jpg`](docs/images/floor_edit/glossy/05_plane_fit.jpg) |
+| 3 | **Render** — every pixel's ray meets the plane, giving metric (u, v); the pattern is tiled there as reflectance, unlit | [`06_tiled_unlit.jpg`](docs/images/floor_edit/glossy/06_tiled_unlit.jpg) |
+| 4 | **Irradiance** — RGB→X diffuse irradiance, grout-filtered, ambient/direct split, anchored to mean 1 on the floor | [`07_irradiance.jpg`](docs/images/floor_edit/glossy/07_irradiance.jpg) |
+| 5 | albedo × irradiance + Fresnel × reflection, composited through a 1 px soft mask | [`08_output.jpg`](docs/images/floor_edit/glossy/08_output.jpg) |
 
 Close up, the window light and the cabinet shadow survive the swap:
 
-![floor_edit detail](docs/images/floor_edit/10_detail.jpg)
+![floor_edit detail](docs/images/floor_edit/glossy/10_detail.jpg)
 
 ---
 
@@ -126,8 +140,10 @@ and it renders dark, which is documented above. A single frame as the UI actuall
 
 Everything above is read from the three job directories. Two additions:
 
-- **The depth maps** come from one MoGe-2 forward pass per scene (neither pipeline saves the point map). They reproduce
-  the recorded numbers exactly, so they are the same tensors those runs used.
+- **The floor_edit depth map and plane grid** come from the per-scene MoGe cache entry
+  (`data/cache/floor_edit/moge_<hash>.npz`) that those jobs themselves wrote, so they are literally the tensors the runs
+  used — the plane refits to 0.27 cm, matching the logged value. The object_edit depth map still comes from one extra
+  MoGe-2 forward pass, since that pipeline does not cache its point map.
 - **The Gaussian renders** are screenshots of this repo's own viewer: a headless Chrome page that mounts the same
   `DropInViewer` from `web/node_modules` with the same camera (45°, z = 2.6), `gpuAcceleratedSort: false` and
   `splatAlphaRemovalThreshold: 5` as [`web/src/SplatViewer.tsx`](web/src/SplatViewer.tsx), loading the job's existing

@@ -1,0 +1,46 @@
+{
+  "scene": "input\\black_tile_flooring.png",
+  "pattern": "C:\\Users\\Aditya Banerjee\\Documents\\personal\\imageEditor\\input\\pattern.png",
+  "seg": "ensemble",
+  "tta": 1,
+  "seed": 0,
+  "illum": "rgbx",
+  "tile_m": 0.6,
+  "material": "legacy",
+  "material_params": null,
+  "device": "xpu",
+  "floor_coverage_pct": 37.4,
+  "total_gen_s": 15.48,
+  "stages": [
+    {
+      "stage": "segmentation",
+      "model": "SegFormer-B5 + UPerNet ConvNeXt-L",
+      "gen_s": 8.169,
+      "gpu_peak_gb": 3.744,
+      "load_s": 2.98
+    },
+    {
+      "stage": "geometry",
+      "model": "MoGe-2 ViT-L",
+      "gen_s": 6.54,
+      "gpu_peak_gb": 2.626,
+      "load_s": 5.74,
+      "plane_residual_cm": 0.28
+    },
+    {
+      "stage": "illumination",
+      "model": "RGB->X irradiance + albedo (cached)",
+      "gen_s": 0.304,
+      "gpu_peak_gb": 0.0,
+      "cached": true
+    },
+    {
+      "stage": "render",
+      "model": "legacy (pre-PBR) shading",
+      "gen_s": 0.464,
+      "gpu_peak_gb": 0.0,
+      "tile_m": 0.6,
+      "material": "legacy"
+    }
+  ]
+}

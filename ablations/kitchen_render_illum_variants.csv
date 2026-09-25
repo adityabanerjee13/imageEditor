@@ -1,8 +1,0 @@
-combination,stage,model,release,load_s,gen_s,gpu_peak_alloc_gb,gpu_peak_reserved_gb,proc_rss_gb,output,plane_residual_cm
-sam3,render (plane fit + tiling),plane fit + projection (CPU),-,0.0,0.464,0.0,0.0,0.828,outputs\black_tile_flooring_sam3_render\render_shaded_heuristic.png,0.28
-sam3,render (plane fit + tiling),plane fit + projection (CPU),-,0.0,0.482,0.0,0.0,0.828,outputs\black_tile_flooring_sam3_render\render_shaded_intrinsic_v1.png,0.28
-sam3,render (plane fit + tiling),plane fit + projection (CPU),-,0.0,0.518,0.0,0.0,0.828,outputs\black_tile_flooring_sam3_render\render_shaded_intrinsic_v21.png,0.28
-sam3,render (plane fit + tiling),plane fit + projection (CPU),-,0.0,0.511,0.0,0.0,0.828,outputs\black_tile_flooring_sam3_render\render_shaded_rgbx_10steps.png,0.28
-sam3,render (plane fit + tiling),plane fit + projection (CPU),-,0.0,0.486,0.0,0.0,0.828,outputs\black_tile_flooring_sam3_render\render_shaded_rgbx_50steps.png,0.28
-sam3,render (plane fit + tiling),plane fit + projection (CPU),-,0.0,0.519,0.0,0.0,0.828,outputs\black_tile_flooring_sam3_render\render_shaded_rgbx_10steps_linear.png,0.28
-sam3,render (plane fit + tiling),plane fit + projection (CPU),-,0.0,0.491,0.0,0.0,0.828,outputs\black_tile_flooring_sam3_render\render_shaded_rgbx_10steps_linear_decoded.png,0.28

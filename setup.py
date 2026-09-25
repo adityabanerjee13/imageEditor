@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 """Bootstrap the imageEditor workspace: clone the code dependencies into repos/ and download the model weights into weights/.
 
-    python setup.py                      # everything (~13 GB of weights for both pipelines)
-    python setup.py --pipeline floor     # only what floor_edit needs   (~10.8 GB)
-    python setup.py --pipeline object    # only what object_edit needs  (~7.1 GB; sam3 + moge are shared)
+    python setup.py                      # everything (~16.3 GB of weights for all three pipelines)
+    python setup.py --pipeline floor     # only what floor_edit needs    (~10.8 GB)
+    python setup.py --pipeline object    # only what object_edit needs   (~7.1 GB; sam3 + moge are shared)
+    python setup.py --pipeline imageto3d # only what imageto3D needs     (~3.3 GB)
     python setup.py --repos-only | --weights-only
     python setup.py --check              # report what is present / missing, download nothing
     python setup.py --pip                # also `pip install -r requirements.txt` first (install torch yourself before)
@@ -11,6 +12,10 @@
 Existing repos / weights are skipped, so the script is safe to re-run after an interrupted download.
 Hugging Face: `facebook/sam3` is gated -> the `jetjodh/sam3` mirror is used. Set HF_TOKEN (or `hf auth login`) if a
 repo asks for it. Stale `.incomplete` files under weights/*/.cache are removed after each download.
+
+imageto3D additionally pulls DINOv2 ViT-L (~1.1 GB) through `torch.hub` on its first run, into the torch hub cache
+rather than weights/ - `--check` reports whether that cache is already populated. Its two checkpoints over the 1 GB
+per-file cap (slat_flow 1.20 GB, ss_flow 1.13 GB) were granted an exception, as SAM 3 and RGB->X were.
 """
 import argparse
 import shutil
@@ -29,9 +34,12 @@ REPO_SPECS = {
     "rgbx":     ("https://github.com/zheng95z/rgbx.git",    None,                                       {"floor"}),
     "FreeFine": ("https://github.com/CIawevy/FreeFine.git", "4c9fdb971572b32edbeac13464659274c28decbb", {"object"}),
     "lama":     ("https://github.com/advimman/lama.git",    "786f5936b27fb3dacd2b1ad799e4de968ea697e7", {"object"}),
+    # DIRECT vendors TRELLIS at third_party/trellis; imageto3D imports that pipeline directly.
+    "DIRECT":   ("https://github.com/Gong1130/DIRECT.git",  "da59fc1987e56dd632a6ef689679ff4c0fdeae06", {"imageto3d"}),
 }
 
 # folder -> spec. kind: "snapshot" (repo subset via allow_patterns) | "file" (single file) | "zip" (single archive, extracted)
+#                       | "url" (direct download, `repo` is the URL)
 # `marker` is a file whose presence means the download is complete.
 WEIGHT_SPECS = {
     "segformer-b5-ade": dict(kind="snapshot", repo="nvidia/segformer-b5-finetuned-ade-640-640",
@@ -57,7 +65,13 @@ WEIGHT_SPECS = {
                                   pipelines={"object"}, size="2.0 GB"),
     "big-lama": dict(kind="zip", repo="smartywu/big-lama", filename="big-lama.zip", marker="big-lama/models/best.ckpt",
                      pipelines={"object"}, size="0.4 GB"),
+    "trellis-image-large": dict(kind="snapshot", repo="microsoft/TRELLIS-image-large",
+                                patterns=["pipeline.json", "ckpts/*.json", "ckpts/*.safetensors"],
+                                marker="ckpts/slat_flow_img_dit_L_64l8p2_fp16.safetensors",
+                                pipelines={"imageto3d"}, size="3.3 GB"),
 }
+
+PIPELINES = ("floor", "object", "imageto3d")
 
 
 def log(msg):
@@ -107,6 +121,9 @@ def download_weight(name):
         snapshot_download(spec["repo"], local_dir=str(dst), allow_patterns=spec["patterns"])
     elif spec["kind"] == "file":
         hf_hub_download(spec["repo"], spec["filename"], local_dir=str(dst))
+    elif spec["kind"] == "url":
+        import urllib.request
+        urllib.request.urlretrieve(spec["repo"], str(dst / spec["filename"]))
     elif spec["kind"] == "zip":
         archive = Path(hf_hub_download(spec["repo"], spec["filename"], local_dir=str(dst)))
         log(f"weights {name}: extracting {archive.name}")
@@ -118,16 +135,27 @@ def download_weight(name):
         sys.exit(f"[setup] weights {name}: download finished but {spec['marker']} is missing - check the repo layout")
 
 
+# ---------------------------------------------------------------------------- torch hub (DINOv2)
+def dinov2_present():
+    """imageto3D's image conditioner is pulled by `torch.hub.load('facebookresearch/dinov2', ...)` on first use,
+    which caches under TORCH_HOME / ~/.cache/torch/hub rather than weights/. Reported, never downloaded here:
+    fetching it would import torch and pull ~1.1 GB, which the first pipeline run does anyway."""
+    import os
+    home = Path(os.environ.get("TORCH_HOME") or (Path.home() / ".cache" / "torch"))
+    ckpts = home / "hub" / "checkpoints"
+    return ckpts.is_dir() and any(ckpts.glob("dinov2_vitl14*"))
+
+
 # ---------------------------------------------------------------------------- main
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--pipeline", choices=["all", "floor", "object"], default="all", help="which pipeline to set up (default: all)")
+    ap.add_argument("--pipeline", choices=["all", *PIPELINES], default="all", help="which pipeline to set up (default: all)")
     ap.add_argument("--repos-only", action="store_true")
     ap.add_argument("--weights-only", action="store_true")
     ap.add_argument("--pip", action="store_true", help="pip install -r requirements.txt before anything else")
     ap.add_argument("--check", action="store_true", help="only report what is present / missing")
     args = ap.parse_args()
-    want = {"floor", "object"} if args.pipeline == "all" else {args.pipeline}
+    want = set(PIPELINES) if args.pipeline == "all" else {args.pipeline}
 
     repos = [n for n, (_, _, p) in REPO_SPECS.items() if p & want]
     weights = [n for n, s in WEIGHT_SPECS.items() if s["pipelines"] & want]
@@ -137,6 +165,9 @@ def main():
             print(f"  repo    {n:<24s} {'ok' if repo_present(n) else 'MISSING'}")
         for n in weights:
             print(f"  weights {n:<24s} {'ok' if weight_present(n) else 'MISSING':<8s} {WEIGHT_SPECS[n]['size']}")
+        if "imageto3d" in want:
+            state = "ok" if dinov2_present() else "not cached (fetched on first run)"
+            print(f"  hub     {'dinov2_vitl14_reg':<24s} {state:<8s} 1.1 GB")
         return
 
     if args.pip:

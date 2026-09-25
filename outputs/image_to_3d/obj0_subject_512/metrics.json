@@ -1,0 +1,40 @@
+{
+  "image": "data\\jobs\\c127fa4b044d\\obj0_subject_512.png",
+  "mask": null,
+  "weights": "C:\\Users\\Aditya Banerjee\\Documents\\personal\\imageEditor\\weights\\trellis-image-large",
+  "device": "xpu",
+  "seed": 42,
+  "formats": [
+    "gaussian",
+    "mesh"
+  ],
+  "fp32": false,
+  "matte": "white",
+  "attn_backend": "sdpa",
+  "voxels": 10169,
+  "outputs": {
+    "slat": "slat.pt",
+    "gaussian": "gaussian.ply",
+    "mesh": {
+      "vertices": 338439,
+      "faces": 672878
+    },
+    "preview": "preview.png"
+  },
+  "stages": [
+    {
+      "stage": "preprocess",
+      "model": "matte=white",
+      "time_s": 0.03,
+      "gpu_peak_gb": 5.73
+    },
+    {
+      "stage": "reconstruct",
+      "model": "TRELLIS-image-large gaussian+mesh",
+      "time_s": 98.53,
+      "gpu_peak_gb": 10.69,
+      "load_s": 12.76,
+      "voxels": 10169
+    }
+  ]
+}

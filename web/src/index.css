@@ -1,0 +1,45 @@
+:root { color-scheme: dark; font-family: system-ui, sans-serif; font-size: 14px; }
+body { margin: 0; background: #151618; color: #e6e6e6; }
+main { max-width: 960px; margin: 0 auto; padding: 16px; }
+header { display: flex; align-items: baseline; gap: 24px; margin-bottom: 12px; }
+h1 { font-size: 18px; margin: 0; font-weight: 600; }
+nav { display: flex; gap: 4px; }
+button { background: #2a2c30; color: inherit; border: 1px solid #3a3d42; border-radius: 6px; padding: 6px 12px; cursor: pointer; font: inherit; }
+button:hover { background: #34373c; }
+button:disabled { opacity: .45; cursor: default; }
+button.active { background: #3b6df0; border-color: #3b6df0; }
+button.ghost { background: transparent; }
+select, input[type=range], input[type=number] { font: inherit; vertical-align: middle; }
+input[type=number] { background: #2a2c30; color: inherit; border: 1px solid #3a3d42; border-radius: 6px; padding: 4px 6px; }
+select { background: #2a2c30; color: inherit; border: 1px solid #3a3d42; border-radius: 6px; padding: 4px 6px; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 10px 0; }
+.file { display: inline-flex; align-items: center; gap: 8px; }
+.file img { height: 48px; border-radius: 4px; }
+.muted { color: #8a8f98; }
+.err { color: #ff6b6b; }
+.hint { margin: 8px 0; color: #c9cdd3; }
+.canvas-wrap { position: relative; max-width: 100%; user-select: none; }
+.canvas-wrap img { display: block; max-width: 100%; }
+.canvas-wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.proposals .thumb { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; }
+.proposals .thumb canvas { border-radius: 4px; background: #000; }
+.proposals .thumb span { font-size: 12px; color: #c9cdd3; }
+.review ul { list-style: none; padding: 0; margin: 8px 0; }
+.review li { display: flex; align-items: center; gap: 10px; padding: 4px 0; font-variant-numeric: tabular-nums; }
+.review li canvas { border-radius: 4px; background: #000; }
+.job { margin-top: 12px; }
+.status { margin: 8px 0; }
+.stages { border-collapse: collapse; font-variant-numeric: tabular-nums; margin: 6px 0; }
+.stages td { padding: 2px 12px 2px 0; }
+img.result { display: block; max-width: 100%; margin: 10px 0; border-radius: 6px; }
+.thumbs { display: flex; flex-wrap: wrap; gap: 10px; }
+.thumbs a { display: flex; flex-direction: column; align-items: center; gap: 3px; color: #8a8f98; font-size: 11px; text-decoration: none; }
+.thumbs img { height: 90px; border-radius: 4px; background: #000; }
+
+/* Image to 3D: the three.js canvas fills the panel width; the checker tint reads as "no background". */
+.viewer3d { width: 100%; border: 1px solid #2a2e35; border-radius: 6px; background:
+  repeating-conic-gradient(#1b1e23 0% 25%, #16181c 0% 50%) 50% / 24px 24px; cursor: grab; overflow: hidden; }
+.viewer3d:active { cursor: grabbing; }
+.viewer3d canvas { display: block; }
+.viewer-note { position: absolute; top: 50%; left: 0; right: 0; text-align: center;
+  transform: translateY(-50%); color: #8a8f98; font-size: 13px; pointer-events: none; }

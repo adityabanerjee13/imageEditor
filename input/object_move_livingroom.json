@@ -1,0 +1,8 @@
+{
+  "scene": "input/livingRoom.jpg",
+  "description": "Move each object located at `initial` so that point lands on `final` (all moves applied together).",
+  "moves": [
+    {"initial": {"x": 643, "y": 958}, "final": {"x": 1786, "y": 942}},
+    {"initial": {"x": 572, "y": 447}, "final": {"x": 2061, "y": 87}}
+  ]
+}

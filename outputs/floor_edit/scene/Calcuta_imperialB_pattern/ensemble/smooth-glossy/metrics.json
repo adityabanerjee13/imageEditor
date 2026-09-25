@@ -1,0 +1,83 @@
+{
+  "scene": "input\\scene.jpeg",
+  "pattern": "input\\Calcuta_imperialB_pattern.webp",
+  "seg": "ensemble",
+  "tta": 1,
+  "seed": 0,
+  "illum": "rgbx",
+  "tile_m": 0.6,
+  "material": "smooth-glossy",
+  "material_params": {
+    "albedo": 0.35,
+    "roughness": 0.08,
+    "ior": 1.5,
+    "coat": 0.0,
+    "coat_roughness": 0.03,
+    "delight": 0.8,
+    "name": "smooth-glossy",
+    "f0": 0.04000000000000001
+  },
+  "device": "xpu",
+  "floor_coverage_pct": 48.3,
+  "total_gen_s": 2.0,
+  "stages": [
+    {
+      "stage": "segmentation",
+      "model": "ensemble (cached)",
+      "gen_s": 0.006,
+      "gpu_peak_gb": 0.0,
+      "cached": true
+    },
+    {
+      "stage": "geometry",
+      "model": "MoGe-2 ViT-L (cached)",
+      "gen_s": 0.068,
+      "gpu_peak_gb": 0.0,
+      "plane_residual_cm": 0.21
+    },
+    {
+      "stage": "irradiance",
+      "model": "RGB->X irradiance + albedo (cached)",
+      "gen_s": 0.069,
+      "gpu_peak_gb": 0.0,
+      "cached": true
+    },
+    {
+      "stage": "render",
+      "model": "smooth-glossy BRDF + tiling (CPU)",
+      "gen_s": 1.858,
+      "gpu_peak_gb": 0.0,
+      "tile_m": 0.6,
+      "tile_uv_m": [
+        0.6,
+        0.2975
+      ],
+      "tile_offset": [
+        0.5,
+        0.5
+      ],
+      "ssr": true,
+      "material": "smooth-glossy",
+      "albedo": 0.35,
+      "albedo_achieved": 0.3507,
+      "roughness": 0.08,
+      "ior": 1.5,
+      "coat": 0.0,
+      "energy_max": 0.948,
+      "grout_filtered_pct": 73.22,
+      "ambient_fraction": 0.0,
+      "ref_irradiance": 0.45545,
+      "ao_min": 0.393,
+      "amb_chroma": [
+        1.086,
+        0.981,
+        0.933
+      ],
+      "dir_chroma": [
+        0.98,
+        1.003,
+        1.031
+      ]
+    }
+  ]
+}

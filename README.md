@@ -1,17 +1,17 @@
 # imageEditor
 
-Two local, non-generative-first editing pipelines for room photos, built for a 16 GB Intel Arc iGPU (PyTorch XPU; runs
+Three local, non-generative-first editing pipelines for room photos, built for a 16 GB Intel Arc iGPU (PyTorch XPU; runs
 unchanged on CUDA or CPU):
 
 | pipeline | what it does | script | time on the iGPU |
 |---|---|---|---|
-| **floor_edit** | replace the floor with a tiled texture in true perspective and scale, keeping the photo's shadows and lighting | `floor_edit/floor_edit.py` | ~20 s |
+| **floor_edit** | replace the floor with a tiled texture in true perspective and scale, keeping the photo's shadows and lighting | `floor_edit/floor_edit.py` | ~10 s (~2 s cached) |
 | **object_edit** | move the object under a click point to another point, with perspective rescale and background fill | `object_edit/object_edit.py` | ~1.7 min |
 | **imageto3D** | reconstruct a 3D proxy (Gaussian splats + textured mesh) of one selected object, and render it from any pose | `imageto3D/image_to_3d.py` | ~1.7 min |
 
 Nothing outside the edited region is touched, and no object names or captions are given to any model.
 
-![floor_edit — replace the floor with a tiled texture](docs/images/floor_edit/00_task.jpg)
+![floor_edit — replace the floor with a tiled texture](docs/images/floor_edit/glossy/00_task.jpg)
 
 ![object_edit — move the object under one point to another](docs/images/object_edit/00_task.jpg)
 
@@ -25,8 +25,8 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/xpu  
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128   # CUDA
 pip install -r requirements.txt
 
-# 2. code dependencies (repos/) + model weights (weights/, ~13 GB from Hugging Face)
-python setup.py                    # or --pipeline floor | object, --check to see what is present
+# 2. code dependencies (repos/) + model weights (weights/, ~16.3 GB from Hugging Face)
+python setup.py                    # or --pipeline floor | object | imageto3d, --check to see what is present
 
 # 3. run
 python floor_edit/floor_edit.py --scene input/scene.jpeg --pattern input/pattern.png
@@ -34,11 +34,11 @@ python object_edit/object_edit.py --coords input/object_move.json
 python -m imageto3D.image_to_3d --image data/jobs/<job>/obj0_subject_512.png
 ```
 
-Outputs land in `outputs/floor_edit/<scene>/<pattern>/<seg>/output.jpg` and `outputs/object_edit/<scene>/output.jpg`,
+Outputs land in `outputs/floor_edit/<scene>/<pattern>/<seg>/<material>/output.jpg` and `outputs/object_edit/<scene>/output.jpg`,
 each with the intermediate masks / maps and a `metrics.json` (per-stage time, peak accelerator memory).
 
-`setup.py` is a bootstrap script, not a setuptools file: it clones `MoGe`, `rgbx`, `FreeFine`, `lama` at pinned
-commits and downloads the weights below with `huggingface_hub`. It skips anything already present, so it can be re-run
+`setup.py` is a bootstrap script, not a setuptools file: it clones `MoGe`, `rgbx`, `FreeFine`, `lama`, `DIRECT` at
+pinned commits and downloads the weights below with `huggingface_hub`. It skips anything already present, so it can be re-run
 after an interrupted download. `facebook/sam3` is gated, so the `jetjodh/sam3` mirror is used; set `HF_TOKEN` if a
 repo asks for it.
 
@@ -46,13 +46,13 @@ repo asks for it.
 |---|---|---|---|
 | `segformer-b5-ade` | `nvidia/segformer-b5-finetuned-ade-640-640` | floor | 0.3 GB |
 | `upernet-convnext-l` | `openmmlab/upernet-convnext-large` | floor | 0.9 GB |
-| `sam3` | `jetjodh/sam3` (mirror of `facebook/sam3`) | both | 3.4 GB |
-| `moge-2-vitl-normal` | `Ruicheng/moge-2-vitl-normal` | both | 1.3 GB |
+| `sam3` | `jetjodh/sam3` (mirror of `facebook/sam3`) | floor + object | 3.4 GB |
+| `moge-2-vitl-normal` | `Ruicheng/moge-2-vitl-normal` | floor + object | 1.3 GB |
 | `rgb-to-x` | `zheng95z/rgb-to-x` | floor | 4.9 GB |
 | `stable-diffusion-v1-5` | `stable-diffusion-v1-5/stable-diffusion-v1-5` (fp16) | object | 2.0 GB |
 | `big-lama` | `smartywu/big-lama` | object | 0.4 GB |
 | `dpir` | `deepinv/drunet` `drunet_deepinv_color_finetune_22k.pth` (DRUNet) | pre-clean + DDRM super-resolution | 0.13 GB |
-| `trellis-image-large` | `microsoft/TRELLIS-image-large` (+ DINOv2 ViT-L via `torch.hub`) | imageto3D (not fetched by setup.py) | 3.3 GB |
+| `trellis-image-large` | `microsoft/TRELLIS-image-large` | imageto3D (DINOv2 ViT-L comes separately via `torch.hub`, ~1.1 GB) | 3.3 GB |
 | `flux1-dev-gguf`, `flux-vae`, `omnipaint` | `second-state/FLUX.1-dev-GGUF` (Q8_0), `nerualdreming/flux_vae`, `yeates/OmniPaint` | object (`omnipaint` backends only; not fetched by setup.py) | 12.7 GB + 0.3 GB + 66 MB |
 
 ## floor_edit
@@ -60,18 +60,28 @@ repo asks for it.
 ```
 photo ──► 1. floor mask ─────────────────────────────────┐
       ├─► 2. MoGe-2 point map + intrinsics ─► plane fit ─┤
-      └─► 3. illumination map ───────────────────────────┤
+      └─► 3. irradiance field ───────────────────────────┤
                                                          ▼
-pattern ─────────────────────► 4. tile on the plane × shading, composite ──► output.jpg
+pattern ──► albedo ──► 4. L = (1-F)·ρ·E + F·L_env, composite ──► output.jpg
 ```
 
 1. **Segmentation** — mean-softmax ensemble of SegFormer-B5 + UPerNet ConvNeXt-L (ADE20K classes floor + rug), or SAM 3
    with the text prompt "floor" (`--seg sam3`). Optional test-time augmentation with majority vote (`--tta N`).
 2. **Geometry** — MoGe-2 ViT-L metric point map and camera intrinsics; a least-squares plane is fitted to the floor points.
-3. **Illumination** — RGB→X "diffuse irradiance" (linear-RGB in, gamma-decoded out) or a luminance heuristic (`--illum`).
-   Thin structures (old grout lines, specks) are filtered out so only real shadows and light fall-off remain.
+3. **Irradiance** — the light field the *old* floor received: RGB→X "diffuse irradiance" (linear-RGB in, gamma-decoded
+   out) or a luminance heuristic (`--illum`). Thin structures (the old floor's grout lines) are filtered out, the field
+   is split into ambient and direct, multiplied by a depth-derived contact-shadow term, and anchored so its mean over
+   the floor is 1 — so the new floor's mean radiance equals its albedo.
 4. **Render** — each pixel's ray is intersected with the plane to get metric floor coordinates, the pattern is tiled at
-   `--tile-m` metres per repeat, multiplied by the shading map and composited through a soft floor mask.
+   `--tile-m` metres per repeat, converted to reflectance, and shaded with a Schlick-Fresnel BRDF **in linear light**.
+   Reflections are exact rather than screen-space: the above-floor geometry is mirrored about the plane and re-projected
+   through the same camera.
+
+Two finishes, `--material smooth-matte` (default) and `--material smooth-glossy`, also selectable in the web UI. Both are
+the same dielectric — a surface reflects ~4 % head-on whatever its roughness — so only the lobe width differs, and with
+it the grazing ramp (0.25 vs 0.92):
+
+![matte and glossy finishes](docs/images/floor_edit/11_finish_compare.jpg)
 
 Details, options, timings and limits: [floor_edit/README.md](floor_edit/README.md).
 

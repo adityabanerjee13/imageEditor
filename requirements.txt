@@ -52,6 +52,12 @@ joblib
 tabulate
 braceexpand
 
+# imageto3D (repos/DIRECT -> third_party/trellis)
+# The commit DIRECT pins. Installs the module `utils3d`, which is a different package from the
+# `utils3d_moge` above (module `utils3d_moge`) - both are needed and they do not collide.
+utils3d @ git+https://github.com/EasternJournalist/utils3d.git@9a4eb15e4021b67b12c460c7057d642626897ec8
+plyfile>=1.0               # trellis Gaussian.save_ply, and gaussian_ply_to_points reading it back
+
 # object_edit/{preclean,resolution}.py (DDRM + DRUNet)
 deepinv==0.4.2             # install with --no-deps: its torch/torchvision pins would replace the XPU build
 h5py
